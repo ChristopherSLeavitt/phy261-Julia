@@ -16,3 +16,5 @@ LectureNotes/Class_05/.ipynb_checkpoints/Class_05-checkpoint.ipynb
 LectureNotes/Class_05/.ipynb_checkpoints/LineCharge-checkpoint.pdf
 LectureNotes/Class_05/.ipynb_checkpoints/LineCharge-checkpoint.png
 LectureNotes/Class_06/.ipynb_checkpoints/Class_06-checkpoint.ipynb
+*.ipynb
+.DS_Store
