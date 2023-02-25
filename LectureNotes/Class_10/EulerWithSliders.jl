@@ -14,23 +14,16 @@ macro bind(def, element)
     end
 end
 
-# ╔═╡ 0a73294f-dcf1-4d56-9830-fb17ee07a171
+# ╔═╡ a0739834-b476-11ed-0bfa-01b1516f5554
 begin
-	using Plots, LaTeXStrings, BenchmarkTools, Measures
-	using Random, PlutoUI
+	using Plots, PlutoUI, LaTeXStrings
 	gr()
-	default(fontfamily = "Computer Modern", size=(600,400), titlefont = (14), legendfontsize = 10, 
+	default(fontfamily = "Computer Modern", size=(700,400), titlefont = (14), legendfontsize = 10, 
         guidefont = (14, :darkgreen), tickfont = (12, :black), 
         framestyle = :box, yminorgrid = true, legend = :outertopright, dpi=600)
 end
 
-# ╔═╡ 81bd8e1c-a39a-42cd-a0f2-e250902412a7
-md"Input Cell with plot settings"
-
-# ╔═╡ 24887035-14ba-41bb-a172-3d2f81bb8fa8
-md"The next to hidden cells (a) set default slider with to 50 percent of screen width, and (b) adjust the max width of the notebook."
-
-# ╔═╡ a8874367-e0f8-4b4c-9fd9-47ddede0cd7a
+# ╔═╡ a6736ba2-885a-45e6-b2b3-b74d7679d811
 html"""
 <style>
 input[type*="range"] {
@@ -39,8 +32,7 @@ input[type*="range"] {
 </style>
 """
 
-
-# ╔═╡ f50f0355-ea87-49da-b052-7df59c721b6b
+# ╔═╡ 73b9c4aa-eee8-4a4e-bad3-b121cb3d7ac4
 html"""
 <style>
 	main {
@@ -52,126 +44,7 @@ html"""
 </style>
 """
 
-# ╔═╡ f8d00f21-d1df-419a-b8ad-f0e5bceba25b
-md"""
-# Using Pluto notebooks
-The first thing to understand about a Pluto notebook is that unlike Jupyter Notebooks, a Pluto notebook is *reactive*. If you define $xmax$ at the beginning of the notebooks and (for example) a plot at the bottom of the notebook depends on $xmax$ changing the value of $xmax$ will *automatically* recalculate and replot any cell which depends on that variable. 
-
-This means that Pluto will complain to you if you try to redefine $xmax$ in some other cell (unlike Jupyter). The benefits are obvious, plots automatically get updated, and you cannot have a functionin notebook in an inconsistent state.
-
-Pluto notebook also allows you to easily create sliders, checkboxes, textboxes, file selectors, buttons, number fields, etc...so that it is easy to create user-friendly interfaces to your Julia code. 
-
-Markdown cells in Pluto notebooks are similar to in Jupyter Notebooks, but with the additional step of \
-	a. enclosing the markdown code beween a triple quoted string preceded by md.\
-	b. code cells of more than one line must be enclosed in a begin...end block\
-	c. in markdown cells with a $\LaTeX$ equation, you must not have a space after the first dollar sign which invokes math mode.
-"""
-
-# ╔═╡ 1b227c39-5124-43d2-8325-e4ab181bdd05
-md"## Make a simple plot"
-
-# ╔═╡ 1dc0a326-3a5c-4ecf-8958-1ac82c4e2262
-begin
-	x = LinRange(0.0, 2π, 500);
-	z = @. exp(-x/(4π))*sin.(2π*x);
-end
-
-# ╔═╡ c7531ed4-d78e-4a0f-906c-e37faad987d4
-plot(x,z, xlabel=L"x (\mathrm{m})", ylabel=L"e^{-\frac{x}{4\pi}}\,\sin(2\pi x)", margin=4mm)
-
-# ╔═╡ 1498db4e-c910-4ec6-9be7-1d53e6669faf
-md"""
-## Interactive plots with a sliders work without any bugs ☻
-To do so, Pluto allows you to bind and html object to a Julia variable, and the PlutoUI interface allows this to happen without you having to know html. 
-
-Here's an example of creating a slider; once created, moving the slider triggers any cell which depends on that value (in this case *angle*) to re-evaluate.
-"""
-
-# ╔═╡ 2b0f2ab5-3db7-4a88-a0ef-66f9c02f491f
-md"""
-θₘ $(@bind θₘ PlutoUI.Slider(0.0 : 0.01 : 2π, 
-        default = π/2, show_value=true))
-
-N $(@bind N PlutoUI.Slider(2 : 1 : 360, default=10, show_value=true))
-"""
-
-# ╔═╡ 41e85ad2-a464-45a2-a8f4-46a99d303459
-md"""
-Now, let's create a plot which depends on this angle slider:
-"""
-
-# ╔═╡ 0d36d915-37fd-47d0-bf09-8e802f6ce84d
-begin
-	angles = range(0.0, θₘ, length=N)
-	plot(cos.(angles), sin.(angles), ratio=:equal, 
-	    xlims=(-1.5, 1.5), ylims=(-1.5,1.5),
-		xlabel=L"\cos\theta", ylabel=L"\sin\theta",
-	    legend=:none, margin=4mm,
-		framestyle=:box)
-end
-
-# ╔═╡ 06906955-bcaf-4fdc-b6b0-3afca9ac0ce0
-md"""
-# The Euler method
-Now let's implement code to execute the Euler method for an object in free fall on close to the surface of the Earth. 
-
-In this case, if we let $y=0$ be at the ground and positive $y$ away from the surface of the Earth, the object's initial height will be $+y_0$, and the acceleration due to gravity will be $a_y = -g$. Let's say that the initial vertical velocity is $v_{0y}$.
-
-We can write the equation of motion for the object (mass = $m$) using Newton's second law:
-"""
-
-# ╔═╡ 1788c541-bf90-4434-9e00-adbc50391ee1
-md"""
-$-mg = m\frac{d^2y}{dt^2},$
-"""
-
-# ╔═╡ d2919b01-029b-431f-9981-345e3b35a64d
-md"and the key to solving this second order differential equation is to rewrite it as two first order equations:"
-
-# ╔═╡ e3d055c8-0fd8-4d8b-b243-278a2fb98eda
-md"""
-$$-g = \frac{dv_y}{dt}$$
-and
-
-$v_y = \frac{dy}{dt}.$
-
-Then, multiplying each equation by $dt$ and rearranging, we have
-
-$dv_y = -g\,dt$
-
-and
-
-$dy = v_y \, dt.$
-
-Now, the key to numerically solving these two equations is to replace $dt$ with a *suitably small* $\Delta t$ therefore giving us small changes in velocity and position given by
-
-$\Delta v_y = -g\,\Delta t$
-
-and
-
-$\Delta y = v_y \, \Delta t.$
-
-The Euler Method then proceeds as follows. From the initial position and velocity,
-$y_0$ and $v_{0y}$, we compute the next values (one time step, $\Delta t$ later) via
-
-$y_1 = y_0 + v_0\Delta t,$ 
-
-and
-
-$v_1 = v_0 - g\Delta t.$
-
-In general, the Euler method computes the next position value using the previous velocity, and the next velocity value using the acceleration at the previous time step; i.e. 
-
-$y_{i+1} = y_i + v_i\Delta t,$ 
-
-and
-
-$v_{i+1} = v_i - g\Delta t.$
-
-where, in this particular problem, the acceleration is constant at $-g$.
-"""
-
-# ╔═╡ 8c3f4c2d-4862-4d52-8210-66a6eaabac56
+# ╔═╡ 06f0c587-e40c-4cc7-8f6d-0488d1cae07b
 begin
 	function euler_1d(y₀,v₀, Δt)
 		g = 9.80
@@ -189,30 +62,48 @@ begin
 	end
 end
 
-# ╔═╡ 28111e18-5495-4e52-a6f6-e1e511a21e7e
+# ╔═╡ bd0cee5f-0767-4062-9eb5-fa1d3fe12e86
+md"""
+Δt	$(@bind Δt Slider(0.001:0.005:0.5, default=0.001, show_value=true))
+"""
+
+# ╔═╡ e5a89435-cf30-4bb4-801e-f2e1bd8aab35
+md"""
+y₀	$(@bind y₀ TextField((8,1); default="19.6") )
+"""
+
+# ╔═╡ 5f5223e1-af4f-4ca4-964b-65476e171413
+md"""
+v₀	$(@bind v₀ TextField((8,1); default="0.0"))
+"""
+
+# ╔═╡ 82662185-292c-4d71-b11c-250d24b490a7
 begin
-	t, y, v = euler_1d(19.6, 0.0, 0.05)
-	p_top = plot(t, y, ylabel=L"y(t)\;\mathrm{(m)}", title=L"\textrm{Free ~ Fall ~ via ~ Euler ~ Method}")
-	p_bot = plot(t, v, ylabel=L"v(t)\; \mathrm{(m/s)}")
-	plot(p_top, p_bot, layout=(2,1), legend=false, xlabel=L"t\;(s)")
-end
+	y0 = parse(Float64, y₀)
+	v0 = parse(Float64, v₀)
+	t, y, v = euler_1d(y0, v0, Δt)
+	y_theory = y0 .+ v0.*t .-4.90.*t.^2
 	
+	p_top = scatter(t, [y,y_theory], ylabel=L"y(t)\;\mathrm{(m)}", 
+		        title=L"\textrm{Free ~ Fall ~ via ~ Euler ~ Method}", 
+		        label=["Euler Method" "Theory"], linewidth=0.5, alpha=0.8)
+	p_bot = scatter(t, v, ylabel=L"v(t)\; \mathrm{(m/s)}", label="Velocity")
+	plot(p_top, p_bot, layout=(2,1), legend=true, xlabel=L"t\;(s)")
+end
+
+# ╔═╡ 6f64bced-b1d5-406a-8f58-47bcb23fa824
+
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
-BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
-Measures = "442fdcdd-2543-5da2-b0f3-8c86c306513e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [compat]
-BenchmarkTools = "~1.3.2"
 LaTeXStrings = "~1.3.0"
-Measures = "~0.3.2"
-Plots = "~1.38.5"
+Plots = "~1.38.6"
 PlutoUI = "~0.7.50"
 """
 
@@ -222,7 +113,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.9.0-beta4"
 manifest_format = "2.0"
-project_hash = "31e20afc3a5bb687043ec3ea826057d732838e46"
+project_hash = "8202694ee6ea95203e7d89712117870a5f310a67"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -239,12 +130,6 @@ uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
-
-[[deps.BenchmarkTools]]
-deps = ["JSON", "Logging", "Printf", "Profile", "Statistics", "UUIDs"]
-git-tree-sha1 = "d9a9701b899b30332bbcb3e1679c41cce81fb0e8"
-uuid = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
-version = "1.3.2"
 
 [[deps.BitFlags]]
 git-tree-sha1 = "43b1a4a8f797c1cddadf60499a8a077d4af2cd2d"
@@ -769,9 +654,23 @@ version = "1.3.4"
 
 [[deps.Plots]]
 deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "JLFzf", "JSON", "LaTeXStrings", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "Pkg", "PlotThemes", "PlotUtils", "Preferences", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "RelocatableFolders", "Requires", "Scratch", "Showoff", "SnoopPrecompile", "SparseArrays", "Statistics", "StatsBase", "UUIDs", "UnicodeFun", "Unzip"]
-git-tree-sha1 = "8ac949bd0ebc46a44afb1fdca1094554a84b086e"
+git-tree-sha1 = "da1d3fb7183e38603fcdd2061c47979d91202c97"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-version = "1.38.5"
+version = "1.38.6"
+
+    [deps.Plots.extensions]
+    FileIOExt = "FileIO"
+    GeometryBasicsExt = "GeometryBasics"
+    IJuliaExt = "IJulia"
+    ImageInTerminalExt = "ImageInTerminal"
+    UnitfulExt = "Unitful"
+
+    [deps.Plots.weakdeps]
+    FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
+    GeometryBasics = "5c1252a2-5f33-56bf-86c9-59e7332b4326"
+    IJulia = "7073ff75-c697-5162-941a-fcdaad2a7d2a"
+    ImageInTerminal = "d8c32880-2388-543b-8c61-d9f865259254"
+    Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [[deps.PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "FixedPointNumbers", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "MIMEs", "Markdown", "Random", "Reexport", "URIs", "UUIDs"]
@@ -788,10 +687,6 @@ version = "1.3.0"
 [[deps.Printf]]
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
-
-[[deps.Profile]]
-deps = ["Printf"]
-uuid = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"
 
 [[deps.Qt5Base_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Fontconfig_jll", "Glib_jll", "JLLWrappers", "Libdl", "Libglvnd_jll", "OpenSSL_jll", "Pkg", "Xorg_libXext_jll", "Xorg_libxcb_jll", "Xorg_xcb_util_image_jll", "Xorg_xcb_util_keysyms_jll", "Xorg_xcb_util_renderutil_jll", "Xorg_xcb_util_wm_jll", "Zlib_jll", "xkbcommon_jll"]
@@ -1199,24 +1094,14 @@ version = "1.4.1+0"
 """
 
 # ╔═╡ Cell order:
-# ╟─81bd8e1c-a39a-42cd-a0f2-e250902412a7
-# ╠═0a73294f-dcf1-4d56-9830-fb17ee07a171
-# ╟─24887035-14ba-41bb-a172-3d2f81bb8fa8
-# ╠═a8874367-e0f8-4b4c-9fd9-47ddede0cd7a
-# ╠═f50f0355-ea87-49da-b052-7df59c721b6b
-# ╟─f8d00f21-d1df-419a-b8ad-f0e5bceba25b
-# ╟─1b227c39-5124-43d2-8325-e4ab181bdd05
-# ╟─1dc0a326-3a5c-4ecf-8958-1ac82c4e2262
-# ╠═c7531ed4-d78e-4a0f-906c-e37faad987d4
-# ╟─1498db4e-c910-4ec6-9be7-1d53e6669faf
-# ╠═2b0f2ab5-3db7-4a88-a0ef-66f9c02f491f
-# ╟─41e85ad2-a464-45a2-a8f4-46a99d303459
-# ╟─0d36d915-37fd-47d0-bf09-8e802f6ce84d
-# ╟─06906955-bcaf-4fdc-b6b0-3afca9ac0ce0
-# ╟─1788c541-bf90-4434-9e00-adbc50391ee1
-# ╟─d2919b01-029b-431f-9981-345e3b35a64d
-# ╟─e3d055c8-0fd8-4d8b-b243-278a2fb98eda
-# ╠═8c3f4c2d-4862-4d52-8210-66a6eaabac56
-# ╠═28111e18-5495-4e52-a6f6-e1e511a21e7e
+# ╠═a0739834-b476-11ed-0bfa-01b1516f5554
+# ╟─a6736ba2-885a-45e6-b2b3-b74d7679d811
+# ╟─73b9c4aa-eee8-4a4e-bad3-b121cb3d7ac4
+# ╟─06f0c587-e40c-4cc7-8f6d-0488d1cae07b
+# ╟─82662185-292c-4d71-b11c-250d24b490a7
+# ╟─bd0cee5f-0767-4062-9eb5-fa1d3fe12e86
+# ╟─e5a89435-cf30-4bb4-801e-f2e1bd8aab35
+# ╟─5f5223e1-af4f-4ca4-964b-65476e171413
+# ╠═6f64bced-b1d5-406a-8f58-47bcb23fa824
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
