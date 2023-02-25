@@ -16,11 +16,11 @@ end
 
 # ╔═╡ a0739834-b476-11ed-0bfa-01b1516f5554
 begin
-	using Plots, PlutoUI, LaTeXStrings
+	using Plots, PlutoUI, LaTeXStrings, Roots
 	gr()
-	default(fontfamily = "Computer Modern", size=(700,400), titlefont = (14), legendfontsize = 10, 
-        guidefont = (14, :darkgreen), tickfont = (12, :black), 
-        framestyle = :box, yminorgrid = true, legend = :outertopright, dpi=600)
+	default(fontfamily = "Computer Modern", size=(800,500), titlefont = (14), legendfontsize = 10, 
+        guidefont = (12, :darkgreen), tickfont = (12, :black), 
+        framestyle = :box, yminorgrid = true, legend = :topright, dpi=600)
 end
 
 # ╔═╡ a6736ba2-885a-45e6-b2b3-b74d7679d811
@@ -60,11 +60,21 @@ begin
 		end
 		return t, y, v
 	end
+
+	function free_fall_theory(y₀,v₀)
+		g = 9.80
+		f(t) = y₀ + v₀*t -0.5*g*t^2
+		tmax = find_zero(f, (0.0,1e6))
+		t = LinRange(0.0,tmax,500)
+		y = f.(t)
+		v = v₀ .-g.*t
+		return t, y, v
+	end
 end
 
 # ╔═╡ bd0cee5f-0767-4062-9eb5-fa1d3fe12e86
 md"""
-Δt	$(@bind Δt Slider(0.001:0.005:0.5, default=0.001, show_value=true))
+Δt	$(@bind Δt Slider(0.001:0.005:0.5, default=0.10, show_value=true))
 """
 
 # ╔═╡ e5a89435-cf30-4bb4-801e-f2e1bd8aab35
@@ -82,13 +92,23 @@ begin
 	y0 = parse(Float64, y₀)
 	v0 = parse(Float64, v₀)
 	t, y, v = euler_1d(y0, v0, Δt)
-	y_theory = y0 .+ v0.*t .-4.90.*t.^2
+	t_th, y_th, v_th = free_fall_theory(y0,v0)
 	
-	p_top = scatter(t, [y,y_theory], ylabel=L"y(t)\;\mathrm{(m)}", 
-		        title=L"\textrm{Free ~ Fall ~ via ~ Euler ~ Method}", 
-		        label=["Euler Method" "Theory"], linewidth=0.5, alpha=0.8)
-	p_bot = scatter(t, v, ylabel=L"v(t)\; \mathrm{(m/s)}", label="Velocity")
-	plot(p_top, p_bot, layout=(2,1), legend=true, xlabel=L"t\;(s)")
+	plot1 = plot(t, y, ylabel=L"y(t)\;\mathrm{(m)}", xlabel=" ",
+		        label="Euler  ", linewidth=1, alpha=0.35, 
+		        markersize=2, marker=:circle, markeralpha=0.35)
+	plot!(t_th, y_th, label="Theory", 
+		  linewidth=4, linealpha=0.2, linecolor=:green)
+	
+	plot2 = plot(t, v, ylabel=L"v(t)\; \mathrm{(m/s)}", label="Velocity",
+		         markersize=3, marker=:circle, markeralpha=0.5, xlabel=L"t\,\mathrm{(s)}")
+
+	# Combine the plots into a grid layout
+	layout = @layout [a;b]
+	plot(plot1, plot2, layout=layout)
+
+	# Add a legend and customize the plot
+	title!(L"\textrm{Free ~ Fall ~ via ~ Euler ~ Method}")
 end
 
 # ╔═╡ 6f64bced-b1d5-406a-8f58-47bcb23fa824
@@ -100,11 +120,13 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+Roots = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
 
 [compat]
 LaTeXStrings = "~1.3.0"
 Plots = "~1.38.6"
 PlutoUI = "~0.7.50"
+Roots = "~2.0.8"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -113,7 +135,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.9.0-beta4"
 manifest_format = "2.0"
-project_hash = "8202694ee6ea95203e7d89712117870a5f310a67"
+project_hash = "00f5ea6aea045f304d5a14880d580c3860e75e4c"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -148,6 +170,12 @@ git-tree-sha1 = "4b859a208b2397a7a623a03449e4636bdb17bcf2"
 uuid = "83423d85-b0ee-5818-9007-b63ccbeb887a"
 version = "1.16.1+1"
 
+[[deps.ChainRulesCore]]
+deps = ["Compat", "LinearAlgebra", "SparseArrays"]
+git-tree-sha1 = "c6d890a52d2c4d55d326439580c3b8d0875a77d9"
+uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
+version = "1.15.7"
+
 [[deps.CodecZlib]]
 deps = ["TranscodingStreams", "Zlib_jll"]
 git-tree-sha1 = "9c209fb7536406834aa938fb149964b985de6c83"
@@ -178,6 +206,11 @@ git-tree-sha1 = "fc08e5930ee9a4e03f84bfb5211cb54e7769758a"
 uuid = "5ae59095-9a9b-59fe-a467-6f913c188581"
 version = "0.12.10"
 
+[[deps.CommonSolve]]
+git-tree-sha1 = "9441451ee712d1aec22edad62db1a9af3dc8d852"
+uuid = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
+version = "0.2.3"
+
 [[deps.Compat]]
 deps = ["Dates", "LinearAlgebra", "UUIDs"]
 git-tree-sha1 = "61fdd77467a5c3ad071ef8277ac6bd6af7dd4c04"
@@ -188,6 +221,20 @@ version = "4.6.0"
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
 version = "1.0.2+0"
+
+[[deps.ConstructionBase]]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "89a9db8d28102b094992472d333674bd1a83ce2a"
+uuid = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
+version = "1.5.1"
+
+    [deps.ConstructionBase.extensions]
+    IntervalSetsExt = "IntervalSets"
+    StaticArraysExt = "StaticArrays"
+
+    [deps.ConstructionBase.weakdeps]
+    IntervalSets = "8197267c-284f-5f27-9208-e0e47529a953"
+    StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [[deps.Contour]]
 git-tree-sha1 = "d05d9e7b7aedff4e5b51a029dced05cfb6125781"
@@ -276,6 +323,10 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "aa31987c2ba8704e23c6c8ba8a4f769d5d7e4f91"
 uuid = "559328eb-81f9-559d-9380-de523a88c83c"
 version = "1.0.10+0"
+
+[[deps.Future]]
+deps = ["Random"]
+uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
 
 [[deps.GLFW_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libglvnd_jll", "Pkg", "Xorg_libXcursor_jll", "Xorg_libXi_jll", "Xorg_libXinerama_jll", "Xorg_libXrandr_jll"]
@@ -731,6 +782,12 @@ git-tree-sha1 = "838a3a4188e2ded87a4f9f184b4b0d78a1e91cb7"
 uuid = "ae029012-a4dd-5104-9daa-d747884805df"
 version = "1.3.0"
 
+[[deps.Roots]]
+deps = ["ChainRulesCore", "CommonSolve", "Printf", "Setfield"]
+git-tree-sha1 = "a3db467ce768343235032a1ca0830fc64158dadf"
+uuid = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
+version = "2.0.8"
+
 [[deps.SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 version = "0.7.0"
@@ -743,6 +800,12 @@ version = "1.1.1"
 
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
+
+[[deps.Setfield]]
+deps = ["ConstructionBase", "Future", "MacroTools", "StaticArraysCore"]
+git-tree-sha1 = "e2cc6d8c88613c05e1defb55170bf5ff211fbeac"
+uuid = "efcf1570-3423-57d1-acb7-fd33fddbac46"
+version = "1.1.1"
 
 [[deps.Showoff]]
 deps = ["Dates", "Grisu"]
@@ -779,12 +842,15 @@ deps = ["IrrationalConstants", "LogExpFunctions", "OpenLibm_jll", "OpenSpecFun_j
 git-tree-sha1 = "ef28127915f4229c971eb43f3fc075dd3fe91880"
 uuid = "276daf66-3868-5448-9aa4-cd146d93841b"
 version = "2.2.0"
+weakdeps = ["ChainRulesCore"]
 
     [deps.SpecialFunctions.extensions]
     SpecialFunctionsChainRulesCoreExt = "ChainRulesCore"
 
-    [deps.SpecialFunctions.weakdeps]
-    ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
+[[deps.StaticArraysCore]]
+git-tree-sha1 = "6b7ba252635a5eff6a0b0664a41ee140a1c9e72a"
+uuid = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
+version = "1.4.0"
 
 [[deps.Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
