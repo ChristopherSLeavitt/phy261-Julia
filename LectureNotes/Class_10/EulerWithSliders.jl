@@ -17,17 +17,32 @@ end
 # ╔═╡ a0739834-b476-11ed-0bfa-01b1516f5554
 begin
 	using Plots, PlutoUI, LaTeXStrings, Roots
+	using Interpolations
 	gr()
-	default(fontfamily = "Computer Modern", size=(800,500), titlefont = (14), legendfontsize = 10, 
+	default(fontfamily = "Computer Modern", size=(900,600), titlefont = (14), legendfontsize = 10, 
         guidefont = (12, :darkgreen), tickfont = (12, :black), 
         framestyle = :box, yminorgrid = true, legend = :topright, dpi=600)
 end
+
+# ╔═╡ 52cbabfe-9b1c-4028-9c19-a55cdfda8aec
+md"""
+# The Euler Method
+
+This is our first foray into actual computational physics. We'll start at the simplest level using 
+the Euler method to numerically compute the solution for a ball launched from a height $y_0$ with an initial vertical velocity $v_0$. 
+
+We'll talk about how the Euler method works, apply it to this familiar introductory physics problem where we can compute the "exact" solution (in the case of zero air resistance). This will allow us to see how the numerical solution compares to a known analytical solution. 
+
+## Imports and setting defaults:
+
+The following few cells import packages, and set up some defaults for plot parameters, slider width, as well as adjusting the width of the Pluto notebook. Feel free to edit them to your preferences.
+"""
 
 # ╔═╡ a6736ba2-885a-45e6-b2b3-b74d7679d811
 html"""
 <style>
 input[type*="range"] {
-	width: 60%;
+	width: 70%;
 }
 </style>
 """
@@ -37,23 +52,39 @@ html"""
 <style>
 	main {
 		margin: 0 auto;
-		max-width: 1400px;
+		max-width: 1000px;
     	padding-left: max(160px, 10%);
     	padding-right: max(160px, 10%);
 	}
 </style>
 """
 
+# ╔═╡ 9cfb3fbb-dae5-44f2-a6a3-018f82bb495a
+md"---"
+
+# ╔═╡ 3b35c5a3-151d-476a-bc4e-0a38810ac318
+md"""
+## Code to compute Euler Method and Theoretical solution
+The cell below defines two functions; `euler_1d(y₀,v₀, Δt)` to compute the solution 
+via the Euler method, and the second, `free_fall_theory(y₀,v₀)`, to compute the "exact" 
+solution (in the case of zero air resistance). The latter of these two utilizes 
+a Julia package called Roots.jl which I use to numerically solve for the time of fall (i.e. when $y=0$) 
+in the kinematic equation
+
+$y(t) = y_0 + v_0t -\frac{1}{2}gt^2.$
+
+"""
+
 # ╔═╡ 06f0c587-e40c-4cc7-8f6d-0488d1cae07b
 begin
-	function euler_1d(y₀,v₀, Δt)
+	function euler_1d(y₀,v₀, Δt) # numerical approximate solution
 		g = 9.80
 		# initialize t, t, v vectors
 		t = [0.0] 
 		y = [y₀]
 		v = [v₀]
 
-		while y[end] ≥ 0.0
+		while y[end] > 0.0
 			append!(t, t[end] + Δt)
 			append!(y, y[end] + v[end]*Δt)
 			append!(v, v[end] - g*Δt)
@@ -61,16 +92,23 @@ begin
 		return t, y, v
 	end
 
-	function free_fall_theory(y₀,v₀)
+	function free_fall_theory(y₀,v₀)  # theoretical solution w/no air resistance
 		g = 9.80
 		f(t) = y₀ + v₀*t -0.5*g*t^2
 		tmax = find_zero(f, (0.0,1e6))
-		t = LinRange(0.0,tmax,500)
+		t = LinRange(0.0,tmax,2000)
 		y = f.(t)
 		v = v₀ .-g.*t
 		return t, y, v
 	end
 end
+
+# ╔═╡ e668f689-70c5-4c2c-b532-181e70b9c2c5
+md"
+### Plot the solution
+Click on the eye icon at the left of this cell to see the code used to create the plot below;
+see the sliders below the plot to control the simulation parameters. Note the clever use of marker and line coloring (with alpha transparency) that is noticeable when $\Delta t$ is at it's lowest value. 😁 
+"
 
 # ╔═╡ bd0cee5f-0767-4062-9eb5-fa1d3fe12e86
 md"""
@@ -93,18 +131,19 @@ begin
 	v0 = parse(Float64, v₀)
 	t, y, v = euler_1d(y0, v0, Δt)
 	t_th, y_th, v_th = free_fall_theory(y0,v0)
-	
+
 	plot1 = plot(t, y, ylabel=L"y(t)\;\mathrm{(m)}", xlabel=" ",
-		        label="Euler  ", linewidth=1, alpha=0.35, 
-		        markersize=2, marker=:circle, markeralpha=0.35)
+		        label="Euler  ", linewidth=1, alpha=0.3, 
+		        markersize=5, marker=:circle, 
+		        markerstrokecolor = :red,  markerstrokealpha=0.3,                        markeralpha=0.25)
 	plot!(t_th, y_th, label="Theory", 
-		  linewidth=4, linealpha=0.2, linecolor=:green)
+		  linewidth=1, linealpha=1.0, linecolor=:green)
 	
 	plot2 = plot(t, v, ylabel=L"v(t)\; \mathrm{(m/s)}", label="Velocity",
 		         markersize=3, marker=:circle, markeralpha=0.5, xlabel=L"t\,\mathrm{(s)}")
 
 	# Combine the plots into a grid layout
-	layout = @layout [a;b]
+	layout = @layout [a;c]
 	plot(plot1, plot2, layout=layout)
 
 	# Add a legend and customize the plot
@@ -112,17 +151,27 @@ begin
 end
 
 # ╔═╡ 6f64bced-b1d5-406a-8f58-47bcb23fa824
+md"""
+### Plot Controls
 
+Adjust the slider to change the time step used in the Euler method, and change the initial conditions using the textboxes.\
+
+"""
+
+# ╔═╡ f91b8eea-a17b-4289-b85b-b6906fdedce8
+md"---"
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
+Interpolations = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
 LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 Roots = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
 
 [compat]
+Interpolations = "~0.14.7"
 LaTeXStrings = "~1.3.0"
 Plots = "~1.38.6"
 PlutoUI = "~0.7.50"
@@ -135,7 +184,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.9.0-beta4"
 manifest_format = "2.0"
-project_hash = "00f5ea6aea045f304d5a14880d580c3860e75e4c"
+project_hash = "baafd972b458ffea2805b271cdbf830fd575007c"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -143,12 +192,24 @@ git-tree-sha1 = "8eaf9f1b4921132a4cff3f36a1d9ba923b14a481"
 uuid = "6e696c72-6542-2067-7265-42206c756150"
 version = "1.1.4"
 
+[[deps.Adapt]]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "0310e08cb19f5da31d08341c6120c047598f5b9c"
+uuid = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
+version = "3.5.0"
+
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
 version = "1.1.1"
 
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
+
+[[deps.AxisAlgorithms]]
+deps = ["LinearAlgebra", "Random", "SparseArrays", "WoodburyMatrices"]
+git-tree-sha1 = "66771c8d21c8ff5e3a93379480a2307ac36863f7"
+uuid = "13072b0f-2c55-5437-9ae7-d433b7a33950"
+version = "1.0.1"
 
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
@@ -261,6 +322,10 @@ deps = ["Mmap"]
 git-tree-sha1 = "9e2f36d3c96a820c678f2f1f1782582fcf685bae"
 uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 version = "1.9.1"
+
+[[deps.Distributed]]
+deps = ["Random", "Serialization", "Sockets"]
+uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[deps.DocStringExtensions]]
 deps = ["LibGit2"]
@@ -407,6 +472,12 @@ version = "0.5.1"
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+
+[[deps.Interpolations]]
+deps = ["Adapt", "AxisAlgorithms", "ChainRulesCore", "LinearAlgebra", "OffsetArrays", "Random", "Ratios", "Requires", "SharedArrays", "SparseArrays", "StaticArrays", "WoodburyMatrices"]
+git-tree-sha1 = "721ec2cf720536ad005cb38f50dbba7b02419a15"
+uuid = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
+version = "0.14.7"
 
 [[deps.IrrationalConstants]]
 git-tree-sha1 = "3868cac300a188a7c3a74f9abd930e52ce1a7a51"
@@ -619,6 +690,12 @@ version = "1.0.2"
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
 version = "1.2.0"
 
+[[deps.OffsetArrays]]
+deps = ["Adapt"]
+git-tree-sha1 = "82d7c9e310fe55aa54996e6f7f94674e2a38fcb4"
+uuid = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
+version = "1.12.9"
+
 [[deps.Ogg_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "887579a3eb005446d514ab7aeac5d1d027658b8f"
@@ -753,6 +830,12 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 deps = ["SHA", "Serialization"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
+[[deps.Ratios]]
+deps = ["Requires"]
+git-tree-sha1 = "dc84268fe0e3335a62e315a3a7cf2afa7178a734"
+uuid = "c84ed2f1-dad5-54f0-aa8e-dbefe2724439"
+version = "0.4.3"
+
 [[deps.RecipesBase]]
 deps = ["SnoopPrecompile"]
 git-tree-sha1 = "261dddd3b862bd2c940cf6ca4d1c8fe593e457c8"
@@ -807,6 +890,10 @@ git-tree-sha1 = "e2cc6d8c88613c05e1defb55170bf5ff211fbeac"
 uuid = "efcf1570-3423-57d1-acb7-fd33fddbac46"
 version = "1.1.1"
 
+[[deps.SharedArrays]]
+deps = ["Distributed", "Mmap", "Random", "Serialization"]
+uuid = "1a1011a3-84de-559e-8e89-a11a2f7dc383"
+
 [[deps.Showoff]]
 deps = ["Dates", "Grisu"]
 git-tree-sha1 = "91eddf657aca81df9ae6ceb20b959ae5653ad1de"
@@ -846,6 +933,12 @@ weakdeps = ["ChainRulesCore"]
 
     [deps.SpecialFunctions.extensions]
     SpecialFunctionsChainRulesCoreExt = "ChainRulesCore"
+
+[[deps.StaticArrays]]
+deps = ["LinearAlgebra", "Random", "StaticArraysCore", "Statistics"]
+git-tree-sha1 = "2d7d9e1ddadc8407ffd460e24218e37ef52dd9a3"
+uuid = "90137ffa-7385-5640-81b9-e52037218182"
+version = "1.5.16"
 
 [[deps.StaticArraysCore]]
 git-tree-sha1 = "6b7ba252635a5eff6a0b0664a41ee140a1c9e72a"
@@ -939,6 +1032,12 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "4528479aa01ee1b3b4cd0e6faef0e04cf16466da"
 uuid = "2381bf8a-dfd0-557d-9999-79630e7b1b91"
 version = "1.25.0+0"
+
+[[deps.WoodburyMatrices]]
+deps = ["LinearAlgebra", "SparseArrays"]
+git-tree-sha1 = "de67fa59e33ad156a590055375a30b23c40299d3"
+uuid = "efce3f68-66dc-5838-9240-27a6d6f5f9b6"
+version = "0.5.5"
 
 [[deps.XML2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libiconv_jll", "Pkg", "Zlib_jll"]
@@ -1160,14 +1259,19 @@ version = "1.4.1+0"
 """
 
 # ╔═╡ Cell order:
+# ╟─52cbabfe-9b1c-4028-9c19-a55cdfda8aec
 # ╠═a0739834-b476-11ed-0bfa-01b1516f5554
 # ╟─a6736ba2-885a-45e6-b2b3-b74d7679d811
-# ╟─73b9c4aa-eee8-4a4e-bad3-b121cb3d7ac4
-# ╟─06f0c587-e40c-4cc7-8f6d-0488d1cae07b
-# ╟─82662185-292c-4d71-b11c-250d24b490a7
+# ╠═73b9c4aa-eee8-4a4e-bad3-b121cb3d7ac4
+# ╟─9cfb3fbb-dae5-44f2-a6a3-018f82bb495a
+# ╟─3b35c5a3-151d-476a-bc4e-0a38810ac318
+# ╠═06f0c587-e40c-4cc7-8f6d-0488d1cae07b
+# ╟─e668f689-70c5-4c2c-b532-181e70b9c2c5
+# ╠═82662185-292c-4d71-b11c-250d24b490a7
 # ╟─bd0cee5f-0767-4062-9eb5-fa1d3fe12e86
 # ╟─e5a89435-cf30-4bb4-801e-f2e1bd8aab35
 # ╟─5f5223e1-af4f-4ca4-964b-65476e171413
-# ╠═6f64bced-b1d5-406a-8f58-47bcb23fa824
+# ╟─6f64bced-b1d5-406a-8f58-47bcb23fa824
+# ╟─f91b8eea-a17b-4289-b85b-b6906fdedce8
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
