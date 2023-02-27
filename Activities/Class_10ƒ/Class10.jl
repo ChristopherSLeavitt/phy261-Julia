@@ -129,7 +129,9 @@ Put your two functions in the cell below.
 
 
 # ╔═╡ db50a54d-1327-41a8-a32f-8e2be86e0266
-
+md"
+Now make a plot of the mass' position versus time for the simple harmonic oscillator. Label your axes and include units. Add a slider to control $\Delta t$, and some other UI element to control the initial position and velocity. 
+"
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1148,6 +1150,6 @@ version = "1.4.1+0"
 # ╠═b651ec2d-4947-408f-b15c-fda8bdbff76e
 # ╠═ee41acda-6fe7-4d3a-83bf-4c0e2ceba226
 # ╠═2426adfa-ce53-4eb4-8ab8-68b6f4ecf1db
-# ╠═db50a54d-1327-41a8-a32f-8e2be86e0266
+# ╟─db50a54d-1327-41a8-a32f-8e2be86e0266
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
