@@ -45,7 +45,7 @@ html"""
 <style>
 	main {
 		margin: 0 auto;
-		max-width: 1400px;
+		max-width: 1200px;
     	padding-left: max(160px, 10%);
     	padding-right: max(160px, 10%);
 	}
@@ -62,9 +62,22 @@ This means that Pluto will complain to you if you try to redefine $xmax$ in some
 Pluto notebook also allows you to easily create sliders, checkboxes, textboxes, file selectors, buttons, number fields, etc...so that it is easy to create user-friendly interfaces to your Julia code. 
 
 Markdown cells in Pluto notebooks are similar to in Jupyter Notebooks, but with the additional step of \
-	a. enclosing the markdown code beween a triple quoted string preceded by md.\
+	a. enclosing the markdown code beween a triple quoted string  (or a set of double quotes) preceded by md.\
 	b. code cells of more than one line must be enclosed in a begin...end block\
 	c. in markdown cells with a $\LaTeX$ equation, you must not have a space after the first dollar sign which invokes math mode.
+
+Here's an example of $\LaTeX$ inline: $\sin\pi = 0$. Here is an equation centered on its own line:
+
+$\int_0^1 x^2\, dx$
+
+You can left justify the equation like this:
+
+ $\int_0^1 x^2\, dx$
+
+
+
+
+
 """
 
 # ╔═╡ 1b227c39-5124-43d2-8325-e4ab181bdd05
@@ -191,7 +204,7 @@ end
 
 # ╔═╡ 28111e18-5495-4e52-a6f6-e1e511a21e7e
 begin
-	t, y, v = euler_1d(19.6, 0.0, 0.05)
+	t, y, v = euler_1d(19.6, 0.0, 0.01)
 	p_top = plot(t, y, ylabel=L"y(t)\;\mathrm{(m)}", title=L"\textrm{Free ~ Fall ~ via ~ Euler ~ Method}")
 	p_bot = plot(t, v, ylabel=L"v(t)\; \mathrm{(m/s)}")
 	plot(p_top, p_bot, layout=(2,1), legend=false, xlabel=L"t\;(s)")
@@ -1216,7 +1229,7 @@ version = "1.4.1+0"
 # ╟─1788c541-bf90-4434-9e00-adbc50391ee1
 # ╟─d2919b01-029b-431f-9981-345e3b35a64d
 # ╟─e3d055c8-0fd8-4d8b-b243-278a2fb98eda
-# ╠═8c3f4c2d-4862-4d52-8210-66a6eaabac56
+# ╟─8c3f4c2d-4862-4d52-8210-66a6eaabac56
 # ╠═28111e18-5495-4e52-a6f6-e1e511a21e7e
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

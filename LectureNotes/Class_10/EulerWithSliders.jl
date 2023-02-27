@@ -115,6 +115,9 @@ md"""
 Δt	$(@bind Δt Slider(0.001:0.005:0.5, default=0.10, show_value=true))
 """
 
+# ╔═╡ 6d96c2b7-801e-4236-9c7d-c8c39aff5008
+
+
 # ╔═╡ e5a89435-cf30-4bb4-801e-f2e1bd8aab35
 md"""
 y₀	$(@bind y₀ TextField((8,1); default="19.6") )
@@ -132,7 +135,7 @@ begin
 	t, y, v = euler_1d(y0, v0, Δt)
 	t_th, y_th, v_th = free_fall_theory(y0,v0)
 
-	plot1 = plot(t, y, ylabel=L"y(t)\;\mathrm{(m)}", xlabel=" ",
+	plot1 = plot(t, y, ylabel=L"y(t)\;\mathrm{(m)}", xlabel="",
 		        label="Euler  ", linewidth=1, alpha=0.3, 
 		        markersize=5, marker=:circle, 
 		        markerstrokecolor = :red,  markerstrokealpha=0.3,                        markeralpha=0.25)
@@ -143,7 +146,7 @@ begin
 		         markersize=3, marker=:circle, markeralpha=0.5, xlabel=L"t\,\mathrm{(s)}")
 
 	# Combine the plots into a grid layout
-	layout = @layout [a;c]
+	layout = @layout [a;b]
 	plot(plot1, plot2, layout=layout)
 
 	# Add a legend and customize the plot
@@ -1259,7 +1262,7 @@ version = "1.4.1+0"
 """
 
 # ╔═╡ Cell order:
-# ╠═52cbabfe-9b1c-4028-9c19-a55cdfda8aec
+# ╟─52cbabfe-9b1c-4028-9c19-a55cdfda8aec
 # ╠═a0739834-b476-11ed-0bfa-01b1516f5554
 # ╠═a6736ba2-885a-45e6-b2b3-b74d7679d811
 # ╠═73b9c4aa-eee8-4a4e-bad3-b121cb3d7ac4
@@ -1267,8 +1270,9 @@ version = "1.4.1+0"
 # ╟─3b35c5a3-151d-476a-bc4e-0a38810ac318
 # ╠═06f0c587-e40c-4cc7-8f6d-0488d1cae07b
 # ╟─e668f689-70c5-4c2c-b532-181e70b9c2c5
-# ╠═82662185-292c-4d71-b11c-250d24b490a7
+# ╟─82662185-292c-4d71-b11c-250d24b490a7
 # ╟─bd0cee5f-0767-4062-9eb5-fa1d3fe12e86
+# ╠═6d96c2b7-801e-4236-9c7d-c8c39aff5008
 # ╟─e5a89435-cf30-4bb4-801e-f2e1bd8aab35
 # ╟─5f5223e1-af4f-4ca4-964b-65476e171413
 # ╟─6f64bced-b1d5-406a-8f58-47bcb23fa824
