@@ -119,9 +119,9 @@ Write down Newton's law for the mass on the spring, and then split it into two f
 
 # ╔═╡ ee41acda-6fe7-4d3a-83bf-4c0e2ceba226
 md"
-Now write two functions to compute the numerical solution for the SHO using 
-a) the Euler method: call it euler_sho
-b) the Euler-Cromer method: call it euler_cromer_sho
+Now write two functions to compute the numerical solution for the SHO using \
+	a) the Euler method: call it `euler_sho` \
+	b) the `Euler-Cromer` method: call it `euler_cromer_sho`\
 Put your two functions in the cell below. 
 "
 
@@ -1146,7 +1146,7 @@ version = "1.4.1+0"
 # ╠═9b18b2f8-3ee3-492a-8478-779fac8e0929
 # ╟─5ead2d1b-bbff-4b34-a9f6-986a84bae376
 # ╠═b651ec2d-4947-408f-b15c-fda8bdbff76e
-# ╟─ee41acda-6fe7-4d3a-83bf-4c0e2ceba226
+# ╠═ee41acda-6fe7-4d3a-83bf-4c0e2ceba226
 # ╠═2426adfa-ce53-4eb4-8ab8-68b6f4ecf1db
 # ╠═db50a54d-1327-41a8-a32f-8e2be86e0266
 # ╟─00000000-0000-0000-0000-000000000001
