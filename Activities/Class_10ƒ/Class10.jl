@@ -106,7 +106,7 @@ Suppose you have a mass free to slide on a frictionless surface. The mass is att
 
 # ╔═╡ 9b18b2f8-3ee3-492a-8478-779fac8e0929
 md"""
-<img title="a title" alt="Alt text" src="SHO.drawio.png">
+![](https://fonsp.com/img/doggoSmall.jpg)
 """
 
 # ╔═╡ 5ead2d1b-bbff-4b34-a9f6-986a84bae376
