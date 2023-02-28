@@ -148,9 +148,9 @@ Now make a plot of the mass' position versus time for the simple harmonic oscill
 # ╠═400c840a-2823-40de-a31e-df89c33a8962
 # ╟─966038d3-1b26-4175-80a4-f30b0ec0653a
 # ╠═eeac6fc0-3d76-480a-89bd-3649f89f4583
-# ╟─9a16ae34-1522-444e-bb81-9df6d11ea9ab
+# ╠═9a16ae34-1522-444e-bb81-9df6d11ea9ab
 # ╟─9b18b2f8-3ee3-492a-8478-779fac8e0929
-# ╟─5ead2d1b-bbff-4b34-a9f6-986a84bae376
+# ╠═5ead2d1b-bbff-4b34-a9f6-986a84bae376
 # ╠═b651ec2d-4947-408f-b15c-fda8bdbff76e
 # ╠═ee41acda-6fe7-4d3a-83bf-4c0e2ceba226
 # ╠═2426adfa-ce53-4eb4-8ab8-68b6f4ecf1db
