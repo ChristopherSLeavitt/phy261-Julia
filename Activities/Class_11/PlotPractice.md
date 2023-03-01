@@ -1,4 +1,4 @@
-## Activity 4
+# Activity 4
 
 ### Creating a 2x2 plot grid
 
