@@ -227,9 +227,11 @@ md"
 ### Comments on improved simulation
 Notice that the disontinuity in the slope on the velocity versus time plot persist; this is somewhat surprising to me.
 I had thought that the problem with the first method (which ignored static friction) was that the frictional force vanished
-when $v=0$, and that this unphysicality was the issue. However, it is extremely rare that the *numerical* value of $v$ is equal to zero, so I remained perplexed about this until I realized that the reason for the kink in the $v$ vs $t$ plot was due to the switching of direction in the frictional force. 
+when $v=0$, and that this unphysicality was the issue. However, it is extremely rare that the *numerical* value of $v$ is equal to zero, so I remained perplexed about this until I realized that the reason for the kink in the $v$ vs $t$ plot was due to the switching of direction in the frictional force. This is the reason for the discontinuous change in the slope of the velocity plot---the change in direction of the frictional force when the mass's velocity changes sign. 
 
 The improved simulation doesn't change this feature, but if *does* address the failure of the first method when $|v| < \delta v$ and  $k|x|\le \mu_s mg$. 
+
+
 "
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
