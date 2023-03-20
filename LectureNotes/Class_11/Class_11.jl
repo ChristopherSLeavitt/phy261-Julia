@@ -4,190 +4,256 @@
 using Markdown
 using InteractiveUtils
 
-# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
-macro bind(def, element)
-    quote
-        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
-        local el = $(esc(element))
-        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
-        el
-    end
-end
-
-# ╔═╡ a0739834-b476-11ed-0bfa-01b1516f5554
+# ╔═╡ 3886724f-38e0-43bb-835e-a6100fd87299
 begin
-	using Plots, PlutoUI, LaTeXStrings, Roots
-	using Interpolations
-	gr()
-	default(fontfamily = "Computer Modern", size=(900,600), titlefont = (14), legendfontsize = 10, 
+using PlutoUI, Plots, LaTeXStrings
+gr()
+default(fontfamily = "Computer Modern", size=(1100,800), titlefont = (14), legendfontsize = 10, 
         guidefont = (12, :darkgreen), tickfont = (12, :black), 
         framestyle = :box, yminorgrid = true, legend = :topright, dpi=600)
+
+TableOfContents(title="📚 Table of Contents", indent=true, depth=4, aside=true)
 end
 
-# ╔═╡ 52cbabfe-9b1c-4028-9c19-a55cdfda8aec
-md"""
-# The Euler Method
+# ╔═╡ 698db7c8-bc64-11ed-0488-07bca5f31a66
+md"# Elaborating on the simple harmonic oscillator
+Today, we made the simple harmonic oscillator you just finished in 
+Assignment_04 a little more complicated. 
 
-This is our first foray into actual computational physics. We'll start at the simplest level using 
-the Euler method to numerically compute the solution for a ball launched from a height $y_0$ with an initial vertical velocity $v_0$. 
+These notes are after the fact; honestly I think things worked better this way, as
+everyone seemed to me more engaged with the question at hand 😃.
 
-We'll talk about how the Euler method works, apply it to this familiar introductory physics problem where we can compute the "exact" solution (in the case of zero air resistance). This will allow us to see how the numerical solution compares to a known analytical solution. 
+We added sliding friction first, and then thought about how to add static friction.
+Here's our friend the mass on a spring:
+"
 
-## Imports and setting defaults:
+# ╔═╡ 8d9b0f1f-0f16-4543-90be-a42e09eada66
+md"![Simple Harmonic Oscillator](https://raw.githubusercontent.com/USM-Phy261/phy261-Julia/main/LectureNotes/Class_11/SHO.png)"
 
-The following few cells import packages, and set up some defaults for plot parameters, slider width, as well as adjusting the width of the Pluto notebook. Feel free to edit them to your preferences.
-"""
+# ╔═╡ f4c44abf-bcae-412c-93e2-53dd739e2aa3
+md"## Imports, Plot style and TOC setup"
 
-# ╔═╡ a6736ba2-885a-45e6-b2b3-b74d7679d811
-html"""
-<style>
-input[type*="range"] {
-	width: 70%;
-}
-</style>
-"""
+# ╔═╡ 23fe9221-fb75-4060-a7f8-c0197074550f
+md"The hidden cell below sets the width of the notebook"
 
-# ╔═╡ 73b9c4aa-eee8-4a4e-bad3-b121cb3d7ac4
+# ╔═╡ a81c99b9-4250-450f-853a-ab167ce9ac32
 html"""
 <style>
 	main {
 		margin: 0 auto;
-		max-width: 1000px;
-    	padding-left: max(160px, 10%);
-    	padding-right: max(160px, 10%);
+		max-width: 1400px;
+    	padding-left: max(100px, 8%);
+    	padding-right: max(100px, 8%);
 	}
 </style>
 """
 
-# ╔═╡ 9cfb3fbb-dae5-44f2-a6a3-018f82bb495a
-md"---"
+# ╔═╡ 8cdedabd-f874-4319-83cd-00459fca7d50
+md" ## Sliding Friction
+For the simple harmonic oscillator with sliding friction approximated by a force of magnitude
 
-# ╔═╡ 3b35c5a3-151d-476a-bc4e-0a38810ac318
-md"""
-## Code to compute Euler Method and Theoretical solution
-The cell below defines two functions; `euler_1d(y₀,v₀, Δt)` to compute the solution 
-via the Euler method, and the second, `free_fall_theory(y₀,v₀)`, to compute the "exact" 
-solution (in the case of zero air resistance). The latter of these two utilizes 
-a Julia package called Roots.jl which I use to numerically solve for the time of fall (i.e. when $y=0$) 
-in the kinematic equation
+$f_k = \mu_k mg,$
 
-$y(t) = y_0 + v_0t -\frac{1}{2}gt^2.$
+we write Newton's second law as 
 
-"""
+$m\ddot{x} = -kx - \mu_k mg \frac{\vec{v}}{v},$
 
-# ╔═╡ 06f0c587-e40c-4cc7-8f6d-0488d1cae07b
-begin
-	function euler_1d(y₀,v₀, Δt) # numerical approximate solution
-		g = 9.80
-		# initialize t, t, v vectors
-		t = [0.0] 
-		y = [y₀]
-		v = [v₀]
+where, in 1d, the term $\vec{v}/v$ simply amounts to the sign of the velocity. Fortunately, we can replace this by the Julia function `sign(v)`.
 
-		while y[end] > 0.0
-			append!(t, t[end] + Δt)
-			append!(y, y[end] + v[end]*Δt)
-			append!(v, v[end] - g*Δt)
-		end
-		return t, y, v
-	end
+So, going through the standard method, we rewrite this as two first order equations and rearrange to get
 
-	function free_fall_theory(y₀,v₀)  # theoretical solution w/no air resistance
-		g = 9.80
-		f(t) = y₀ + v₀*t -0.5*g*t^2
-		tmax = find_zero(f, (0.0,1e6))
-		t = LinRange(0.0,tmax,2000)
-		y = f.(t)
-		v = v₀ .-g.*t
-		return t, y, v
-	end
-end
+$\Delta v = -\left(\frac{k}{m} x + \mu_k g*sign(v)\right)\Delta t$
 
-# ╔═╡ e668f689-70c5-4c2c-b532-181e70b9c2c5
-md"
-### Plot the solution
-Click on the eye icon at the left of this cell to see the code used to create the plot below;
-see the sliders below the plot to control the simulation parameters. Note the clever use of marker and line coloring (with alpha transparency) that is noticeable when $\Delta t$ is at it's lowest value. 😁 
+and
+
+$\Delta x = v\,\Delta t.$
+
+So now, I'll write some code to solve this problem as stated. 
 "
 
-# ╔═╡ bd0cee5f-0767-4062-9eb5-fa1d3fe12e86
-md"""
-Δt	$(@bind Δt Slider(0.001:0.005:0.5, default=0.10, show_value=true))
-"""
-
-# ╔═╡ 6d96c2b7-801e-4236-9c7d-c8c39aff5008
+# ╔═╡ 8c11cdab-ff4f-451e-a155-7b5dec2853e8
 
 
-# ╔═╡ e5a89435-cf30-4bb4-801e-f2e1bd8aab35
-md"""
-y₀	$(@bind y₀ TextField((8,1); default="19.6") )
-"""
+# ╔═╡ 8f11b20a-13f5-43ed-a5c4-4858deda04c8
+md" ### Sliding friction code via Euler-Cromer method
+Recalling that in assignment_04, the Euler method is bad news when dealing with
+oscillatory phenomena, we used the Euler-Cromer method. I'll set up arrays to compute position, velocity, and time, and then when done filling them, I'll compute the kinetic, potential, and total energies using the vectorization capability of Julia. Here we go:
+"
 
-# ╔═╡ 5f5223e1-af4f-4ca4-964b-65476e171413
-md"""
-v₀	$(@bind v₀ TextField((8,1); default="0.0"))
-"""
-
-# ╔═╡ 82662185-292c-4d71-b11c-250d24b490a7
+# ╔═╡ 394dd3b6-720a-4567-ab14-1b416d61a64f
 begin
-	y0 = parse(Float64, y₀)
-	v0 = parse(Float64, v₀)
-	t, y, v = euler_1d(y0, v0, Δt)
-	t_th, y_th, v_th = free_fall_theory(y0,v0)
-
-	plot1 = plot(t, y, ylabel=L"y(t)\;\mathrm{(m)}", xlabel="",
-		        label="Euler  ", linewidth=1, alpha=0.3, 
-		        markersize=5, marker=:circle, 
-		        markerstrokecolor = :red,  markerstrokealpha=0.3,                        markeralpha=0.25)
-	plot!(t_th, y_th, label="Theory", 
-		  linewidth=1, linealpha=1.0, linecolor=:green)
+	const g=9.80
+	function ec_shm_friction(x₀, v₀, Δt, tmax, μₖ, k=1.0, m=1.0)
+		x = [x₀]
+		v = [v₀]
+		t = collect(0.0:Δt:tmax)
+		for i in 2:length(t)
+			vnew = last(v) -((k*last(x)/m) + μₖ*g*sign(last(v)))*Δt
+			xnew = last(x) + vnew*Δt
+			push!(v,vnew)
+			push!(x,xnew)
+		end
+		K = 0.5*m.*v.^2
+		U = 0.5*k.*x.^2
+		E = K .+ U
+		return t,x,v,K,U,E
+	end
+end	
 	
-	plot2 = plot(t, v, ylabel=L"v(t)\; \mathrm{(m/s)}", label="Velocity",
-		         markersize=3, marker=:circle, markeralpha=0.5, xlabel=L"t\,\mathrm{(s)}")
 
-	# Combine the plots into a grid layout
-	layout = @layout [a;b]
-	plot(plot1, plot2, layout=layout)
+# ╔═╡ 9811c385-de5a-4276-82d0-05625eae4517
+md" #### Create plotting function
+Now let's write a function to take the output of `ec_shm_friction` and produce an useful graphical output.
+"
 
-	# Add a legend and customize the plot
-	title!(L"\textrm{Free ~ Fall ~ via ~ Euler ~ Method}")
+# ╔═╡ e909ee07-a345-49bc-95f2-354d7067d1c6
+begin
+	function plot_shm(t,x,v,K,U,E)
+		A = maximum(x) 			# max amplitude
+		vmax = maximum(abs.(v)) # max speed
+		l = @layout [a b ; c d]
+		plot1 = plot(t,x, label=L"x", xlabel=L"t\,\mathrm{(s)}", 
+					ylabel=L"x\,\mathrm{(m)}")
+		plot2 = plot(t,v,label=L"v", xlabel=L"t\,\mathrm{(s)}", 
+					ylabel=L"v\,\mathrm{(m/s)}") 
+		plot3 = plot(t,K,label=L"K", xlabel=L"t\,\mathrm{(s)}")
+			plot!(t,U,label=L"U")
+			plot!(t,E,label=L"E")
+		plot4 = plot(v./vmax, x./A,
+				xlabel=L"x/A", ylabel=L"\frac{v}{A\omega}",
+		        aspect_ratio=1)
+		plot(plot1, plot2, plot3, plot4, layout=l)
+	end	
 end
 
-# ╔═╡ 6f64bced-b1d5-406a-8f58-47bcb23fa824
-md"""
-### Plot Controls
+# ╔═╡ 06040789-f6bd-4b21-88e5-c313ac91eb94
+#  Reference: ec_shm_friction(x₀, v₀, Δt, tmax, μₖ, k=1.0, m=1.0)
+t,x,v,K,U,E = ec_shm_friction(2.0, 0.0, 0.001, 20.0, 0.2, 20.0, 1.0)
 
-Adjust the slider to change the time step used in the Euler method, and change the initial conditions using the textboxes.\
+# ╔═╡ abdbc3ea-d977-4e17-b875-6147692e3e7e
+plot_shm(t,x,v,K,U,E)
 
-"""
+# ╔═╡ acbf3529-142a-4cec-a52c-1d2bcdbf06ee
+md"
+### Comments on simulation
+For the plot above, casual inspection reveals what seems like reasonable behavior; however if you look carefully, you'll see some odd behavior as the velocity gets close to zero. 
 
-# ╔═╡ f91b8eea-a17b-4289-b85b-b6906fdedce8
-md"---"
+Let's see that more clearly by simply changing the initial x position to a much smaller number (and reducing tmax):
+"
+
+# ╔═╡ d2bf4cf8-e6b6-4ecf-af50-adc1f2381d13
+#  Reference: ec_shm_friction(x₀, v₀, Δt, tmax, μₖ, k=1.0, m=1.0)
+tf,xf,vf,Kf,Uf,Ef = ec_shm_friction(1.000, 0.000, 0.0001, 5.0, 0.2, 10.0, 1.0)
+
+# ╔═╡ 106ee2cc-6e16-43db-927e-a135f7bba976
+plot_shm(tf,xf,vf,Kf,Uf,Ef)
+
+# ╔═╡ f391719c-9c17-4fae-837c-550e08fcc5e8
+md"
+You should notice a sudden change in slope of the velocity curve between 0.5 and 1.0 sconds where $v=0$. This is due to the fact that when $v=0$, the kinetic friction force in our model vanishes---and it's not true in reality that the frictional force would vanish, as there would be some static frictional force. 
+
+In fact when $kx = \mu_s mg,$ or when 
+
+$|x| \le \frac{\mu_s mg}{k},$
+
+then the mass will stop moving altogether *provided* $v=0$. In practice, the real scenario is more complex, and one sees (experimentally) stick-slip interactions where the mass studders to a stop due to inhomogeneities in the surface features.
+
+So, we should somehow build in a method of dealing with the existance of static friction.
+"
+
+
+# ╔═╡ 38347ad7-6213-46f9-a80c-d545c4e8ca6c
+md"## Building in static friction to our model
+Let's modify our code so that if $|v|\le \delta v$ (where $\delta v \approx 10^{-6}\;\mathrm{m/s}$), that the code checks whether 
+
+$k|x| \le \mu_s mg,$
+
+and if so, the acceleration will be zero (and therefore the new velocity will equal the previous velocity). 
+If, on the other hand $k|x| > \mu_s mg,$ then 
+
+$a = \frac{-kx + \mu_s mg * sign(x)}{m}$
+
+and thus 
+
+$v_{\mathrm{new}} = v_{\mathrm{old}} + \frac{-kx + \mu_s mg * sign(x)}{m} \Delta t.$
+
+It took a little work on paper to convince myself of the above.
+
+Implementing this is a simple modification to our previous work:
+"
+
+# ╔═╡ 948ec111-3048-497b-8a7e-d9ef0acf24c2
+begin
+	function ec_shm_best(x₀, v₀, Δt, tmax, μₖ, μₛ, δv=1.0e-6, k=1.0, m=1.0)
+		x = [x₀]
+		v = [v₀]
+		t = [0.0]
+		while last(t) ≤ tmax
+			if abs(last(v)) ≤ δv 
+				if abs(k*last(x)) ≤ μₛ*m*g
+					vnew = last(v) 
+					xnew = last(x) + vnew*Δt
+				else
+					vnew = last(v) + (-k*last(x) + μₛ*m*g*sign(last(x)))*Δt/m
+					xnew = last(x) + vnew*Δt
+				end
+				push!(v,vnew)
+				push!(x,xnew)
+				push!(t,last(t)+Δt)
+			else
+				vnew = last(v) -((k*last(x)/m) + μₖ*g*sign(last(v)))*Δt
+				xnew = last(x) + vnew*Δt
+				push!(v,vnew)
+				push!(x,xnew)
+				push!(t,last(t)+Δt)
+			end
+		end
+		K = 0.5*m.*v.^2
+		U = 0.5*k.*x.^2
+		E = K .+ U
+		return t,x,v,K,U,E
+	end
+end	
+
+# ╔═╡ 6d361988-f78e-477d-911b-d8414c71f80b
+#        Reference: ec_shm_best(x₀, v₀, Δt, tmax, μₖ, μₛ, δv=1.0e-6, k=1.0, m=1.0)
+ts,xs,vs,Ks,Us,Es = ec_shm_best(0.300, 0.000, 0.00001, 10.0, 0.2, 0.2, 1.0e-8, 10.0, 1.0)
+
+# ╔═╡ 60558bf5-1b48-478b-aaf2-c78747786ed2
+plot_shm(ts,xs,vs,Ks,Us,Es)
+
+# ╔═╡ 6a19803c-312b-452b-baa5-fed832910f47
+md"
+### Comments on improved simulation
+Notice that the disontinuity in the slope on the velocity versus time plot persist; this is somewhat surprising to me.
+I had thought that the problem with the first method (which ignored static friction) was that the frictional force vanished
+when $v=0$, and that this unphysicality was the issue. However, it is extremely rare that the *numerical* value of $v$ is equal to zero, so I remained perplexed about this until I realized that the reason for the kink in the $v$ vs $t$ plot was due to the switching of direction in the frictional force. This is the reason for the discontinuous change in the slope of the velocity plot---the change in direction of the frictional force when the mass's velocity changes sign. 
+
+The improved simulation doesn't change this feature, but if *does* address the failure of the first method when $|v| < \delta v$ and  $k|x|\le \mu_s mg$. 
+
+
+"
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
-Interpolations = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
 LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-Roots = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
 
 [compat]
-Interpolations = "~0.14.7"
 LaTeXStrings = "~1.3.0"
 Plots = "~1.38.6"
 PlutoUI = "~0.7.50"
-Roots = "~2.0.8"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.9.0-beta4"
+julia_version = "1.9.0-rc1"
 manifest_format = "2.0"
-project_hash = "60e774531b484004f33aecce3d060e5e6913f261"
+project_hash = "8202694ee6ea95203e7d89712117870a5f310a67"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -195,24 +261,12 @@ git-tree-sha1 = "8eaf9f1b4921132a4cff3f36a1d9ba923b14a481"
 uuid = "6e696c72-6542-2067-7265-42206c756150"
 version = "1.1.4"
 
-[[deps.Adapt]]
-deps = ["LinearAlgebra"]
-git-tree-sha1 = "0310e08cb19f5da31d08341c6120c047598f5b9c"
-uuid = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
-version = "3.5.0"
-
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
 version = "1.1.1"
 
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
-
-[[deps.AxisAlgorithms]]
-deps = ["LinearAlgebra", "Random", "SparseArrays", "WoodburyMatrices"]
-git-tree-sha1 = "66771c8d21c8ff5e3a93379480a2307ac36863f7"
-uuid = "13072b0f-2c55-5437-9ae7-d433b7a33950"
-version = "1.0.1"
 
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
@@ -233,12 +287,6 @@ deps = ["Artifacts", "Bzip2_jll", "CompilerSupportLibraries_jll", "Fontconfig_jl
 git-tree-sha1 = "4b859a208b2397a7a623a03449e4636bdb17bcf2"
 uuid = "83423d85-b0ee-5818-9007-b63ccbeb887a"
 version = "1.16.1+1"
-
-[[deps.ChainRulesCore]]
-deps = ["Compat", "LinearAlgebra", "SparseArrays"]
-git-tree-sha1 = "c6d890a52d2c4d55d326439580c3b8d0875a77d9"
-uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-version = "1.15.7"
 
 [[deps.CodecZlib]]
 deps = ["TranscodingStreams", "Zlib_jll"]
@@ -270,35 +318,20 @@ git-tree-sha1 = "fc08e5930ee9a4e03f84bfb5211cb54e7769758a"
 uuid = "5ae59095-9a9b-59fe-a467-6f913c188581"
 version = "0.12.10"
 
-[[deps.CommonSolve]]
-git-tree-sha1 = "9441451ee712d1aec22edad62db1a9af3dc8d852"
-uuid = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
-version = "0.2.3"
-
 [[deps.Compat]]
-deps = ["Dates", "LinearAlgebra", "UUIDs"]
-git-tree-sha1 = "61fdd77467a5c3ad071ef8277ac6bd6af7dd4c04"
+deps = ["UUIDs"]
+git-tree-sha1 = "7a60c856b9fa189eb34f5f8a6f6b5529b7942957"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
-version = "4.6.0"
+version = "4.6.1"
+weakdeps = ["Dates", "LinearAlgebra"]
+
+    [deps.Compat.extensions]
+    CompatLinearAlgebraExt = "LinearAlgebra"
 
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
 version = "1.0.2+0"
-
-[[deps.ConstructionBase]]
-deps = ["LinearAlgebra"]
-git-tree-sha1 = "89a9db8d28102b094992472d333674bd1a83ce2a"
-uuid = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
-version = "1.5.1"
-
-    [deps.ConstructionBase.extensions]
-    IntervalSetsExt = "IntervalSets"
-    StaticArraysExt = "StaticArrays"
-
-    [deps.ConstructionBase.weakdeps]
-    IntervalSets = "8197267c-284f-5f27-9208-e0e47529a953"
-    StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [[deps.Contour]]
 git-tree-sha1 = "d05d9e7b7aedff4e5b51a029dced05cfb6125781"
@@ -325,10 +358,6 @@ deps = ["Mmap"]
 git-tree-sha1 = "9e2f36d3c96a820c678f2f1f1782582fcf685bae"
 uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 version = "1.9.1"
-
-[[deps.Distributed]]
-deps = ["Random", "Serialization", "Sockets"]
-uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[deps.DocStringExtensions]]
 deps = ["LibGit2"]
@@ -391,10 +420,6 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "aa31987c2ba8704e23c6c8ba8a4f769d5d7e4f91"
 uuid = "559328eb-81f9-559d-9380-de523a88c83c"
 version = "1.0.10+0"
-
-[[deps.Future]]
-deps = ["Random"]
-uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
 
 [[deps.GLFW_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libglvnd_jll", "Pkg", "Xorg_libXcursor_jll", "Xorg_libXi_jll", "Xorg_libXinerama_jll", "Xorg_libXrandr_jll"]
@@ -476,16 +501,10 @@ version = "0.5.1"
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 
-[[deps.Interpolations]]
-deps = ["Adapt", "AxisAlgorithms", "ChainRulesCore", "LinearAlgebra", "OffsetArrays", "Random", "Ratios", "Requires", "SharedArrays", "SparseArrays", "StaticArrays", "WoodburyMatrices"]
-git-tree-sha1 = "721ec2cf720536ad005cb38f50dbba7b02419a15"
-uuid = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
-version = "0.14.7"
-
 [[deps.IrrationalConstants]]
-git-tree-sha1 = "3868cac300a188a7c3a74f9abd930e52ce1a7a51"
+git-tree-sha1 = "630b497eafcc20001bba38a4651b327dcfc491d2"
 uuid = "92d709cd-6900-40b7-9082-c6be49f344b6"
-version = "0.2.1"
+version = "0.2.2"
 
 [[deps.JLFzf]]
 deps = ["Pipe", "REPL", "Random", "fzf_jll"]
@@ -663,7 +682,7 @@ version = "1.1.7"
 [[deps.MbedTLS_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
-version = "2.28.0+0"
+version = "2.28.2+0"
 
 [[deps.Measures]]
 git-tree-sha1 = "c13304c81eec1ed3af7fc20e75fb6b26092a1102"
@@ -693,12 +712,6 @@ version = "1.0.2"
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
 version = "1.2.0"
 
-[[deps.OffsetArrays]]
-deps = ["Adapt"]
-git-tree-sha1 = "82d7c9e310fe55aa54996e6f7f94674e2a38fcb4"
-uuid = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
-version = "1.12.9"
-
 [[deps.Ogg_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "887579a3eb005446d514ab7aeac5d1d027658b8f"
@@ -708,7 +721,7 @@ version = "1.3.5+1"
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
-version = "0.3.21+0"
+version = "0.3.21+4"
 
 [[deps.OpenLibm_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -751,9 +764,9 @@ version = "10.42.0+0"
 
 [[deps.Parsers]]
 deps = ["Dates", "SnoopPrecompile"]
-git-tree-sha1 = "6f4fbcd1ad45905a5dee3f4256fabb49aa2110c6"
+git-tree-sha1 = "478ac6c952fddd4399e71d4779797c538d0ff2bf"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "2.5.7"
+version = "2.5.8"
 
 [[deps.Pipe]]
 git-tree-sha1 = "6842804e7867b115ca9de748a0cf6b364523c16d"
@@ -833,12 +846,6 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 deps = ["SHA", "Serialization"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
-[[deps.Ratios]]
-deps = ["Requires"]
-git-tree-sha1 = "dc84268fe0e3335a62e315a3a7cf2afa7178a734"
-uuid = "c84ed2f1-dad5-54f0-aa8e-dbefe2724439"
-version = "0.4.3"
-
 [[deps.RecipesBase]]
 deps = ["SnoopPrecompile"]
 git-tree-sha1 = "261dddd3b862bd2c940cf6ca4d1c8fe593e457c8"
@@ -868,12 +875,6 @@ git-tree-sha1 = "838a3a4188e2ded87a4f9f184b4b0d78a1e91cb7"
 uuid = "ae029012-a4dd-5104-9daa-d747884805df"
 version = "1.3.0"
 
-[[deps.Roots]]
-deps = ["ChainRulesCore", "CommonSolve", "Printf", "Setfield"]
-git-tree-sha1 = "a3db467ce768343235032a1ca0830fc64158dadf"
-uuid = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
-version = "2.0.8"
-
 [[deps.SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 version = "0.7.0"
@@ -886,16 +887,6 @@ version = "1.1.1"
 
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
-
-[[deps.Setfield]]
-deps = ["ConstructionBase", "Future", "MacroTools", "StaticArraysCore"]
-git-tree-sha1 = "e2cc6d8c88613c05e1defb55170bf5ff211fbeac"
-uuid = "efcf1570-3423-57d1-acb7-fd33fddbac46"
-version = "1.1.1"
-
-[[deps.SharedArrays]]
-deps = ["Distributed", "Mmap", "Random", "Serialization"]
-uuid = "1a1011a3-84de-559e-8e89-a11a2f7dc383"
 
 [[deps.Showoff]]
 deps = ["Dates", "Grisu"]
@@ -932,21 +923,12 @@ deps = ["IrrationalConstants", "LogExpFunctions", "OpenLibm_jll", "OpenSpecFun_j
 git-tree-sha1 = "ef28127915f4229c971eb43f3fc075dd3fe91880"
 uuid = "276daf66-3868-5448-9aa4-cd146d93841b"
 version = "2.2.0"
-weakdeps = ["ChainRulesCore"]
 
     [deps.SpecialFunctions.extensions]
     SpecialFunctionsChainRulesCoreExt = "ChainRulesCore"
 
-[[deps.StaticArrays]]
-deps = ["LinearAlgebra", "Random", "StaticArraysCore", "Statistics"]
-git-tree-sha1 = "2d7d9e1ddadc8407ffd460e24218e37ef52dd9a3"
-uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.5.16"
-
-[[deps.StaticArraysCore]]
-git-tree-sha1 = "6b7ba252635a5eff6a0b0664a41ee140a1c9e72a"
-uuid = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
-version = "1.4.0"
+    [deps.SpecialFunctions.weakdeps]
+    ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 
 [[deps.Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
@@ -1035,12 +1017,6 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "4528479aa01ee1b3b4cd0e6faef0e04cf16466da"
 uuid = "2381bf8a-dfd0-557d-9999-79630e7b1b91"
 version = "1.25.0+0"
-
-[[deps.WoodburyMatrices]]
-deps = ["LinearAlgebra", "SparseArrays"]
-git-tree-sha1 = "de67fa59e33ad156a590055375a30b23c40299d3"
-uuid = "efce3f68-66dc-5838-9240-27a6d6f5f9b6"
-version = "0.5.5"
 
 [[deps.XML2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libiconv_jll", "Pkg", "Zlib_jll"]
@@ -1262,20 +1238,28 @@ version = "1.4.1+0"
 """
 
 # ╔═╡ Cell order:
-# ╟─52cbabfe-9b1c-4028-9c19-a55cdfda8aec
-# ╠═a0739834-b476-11ed-0bfa-01b1516f5554
-# ╠═a6736ba2-885a-45e6-b2b3-b74d7679d811
-# ╠═73b9c4aa-eee8-4a4e-bad3-b121cb3d7ac4
-# ╟─9cfb3fbb-dae5-44f2-a6a3-018f82bb495a
-# ╟─3b35c5a3-151d-476a-bc4e-0a38810ac318
-# ╠═06f0c587-e40c-4cc7-8f6d-0488d1cae07b
-# ╟─e668f689-70c5-4c2c-b532-181e70b9c2c5
-# ╠═82662185-292c-4d71-b11c-250d24b490a7
-# ╠═bd0cee5f-0767-4062-9eb5-fa1d3fe12e86
-# ╠═6d96c2b7-801e-4236-9c7d-c8c39aff5008
-# ╟─e5a89435-cf30-4bb4-801e-f2e1bd8aab35
-# ╟─5f5223e1-af4f-4ca4-964b-65476e171413
-# ╟─6f64bced-b1d5-406a-8f58-47bcb23fa824
-# ╟─f91b8eea-a17b-4289-b85b-b6906fdedce8
+# ╟─698db7c8-bc64-11ed-0488-07bca5f31a66
+# ╠═8d9b0f1f-0f16-4543-90be-a42e09eada66
+# ╟─f4c44abf-bcae-412c-93e2-53dd739e2aa3
+# ╠═3886724f-38e0-43bb-835e-a6100fd87299
+# ╟─23fe9221-fb75-4060-a7f8-c0197074550f
+# ╟─a81c99b9-4250-450f-853a-ab167ce9ac32
+# ╟─8cdedabd-f874-4319-83cd-00459fca7d50
+# ╠═8c11cdab-ff4f-451e-a155-7b5dec2853e8
+# ╟─8f11b20a-13f5-43ed-a5c4-4858deda04c8
+# ╠═394dd3b6-720a-4567-ab14-1b416d61a64f
+# ╟─9811c385-de5a-4276-82d0-05625eae4517
+# ╠═e909ee07-a345-49bc-95f2-354d7067d1c6
+# ╠═06040789-f6bd-4b21-88e5-c313ac91eb94
+# ╠═abdbc3ea-d977-4e17-b875-6147692e3e7e
+# ╠═acbf3529-142a-4cec-a52c-1d2bcdbf06ee
+# ╠═d2bf4cf8-e6b6-4ecf-af50-adc1f2381d13
+# ╠═106ee2cc-6e16-43db-927e-a135f7bba976
+# ╟─f391719c-9c17-4fae-837c-550e08fcc5e8
+# ╟─38347ad7-6213-46f9-a80c-d545c4e8ca6c
+# ╠═948ec111-3048-497b-8a7e-d9ef0acf24c2
+# ╠═6d361988-f78e-477d-911b-d8414c71f80b
+# ╠═60558bf5-1b48-478b-aaf2-c78747786ed2
+# ╟─6a19803c-312b-452b-baa5-fed832910f47
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
